@@ -5,7 +5,11 @@
 # $1 = url
 # $2 = folder name
 # $3 = site title
-
+#
+# Inspirated from Maxime BJ
+# For more information, please visit 
+# http://www.wp-spread.com/tuto-wp-cli-comment-installer-et-configurer-wordpress-en-moins-dune-minute-et-en-seulement-un-clic/
+# 
 #  ==============================
 #  VARS
 #  ==============================
