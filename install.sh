@@ -14,25 +14,28 @@
 #  VARS
 #  ==============================
 
-# local url 
+# Local url 
 url=$1
 
-# folder name
+# Folder name
 foldername=$2
 
-# path to install your WPs
+# Path to install your WPs
 rootpath="/var/www/public/"
 pathtoinstall="${rootpath}${foldername}"
 
-# wp title
+# Path to plugins.txt
+pluginfilepath="${pathtoinstall}/plugins.txt"
+
+# Wp title
 title=$3
 
-# admin login
+# Admin login
 adminlogin="admin"
 adminpass="admin"
 adminemail="clement.biron@gmail.com"
 
-#DB
+# DB
 dbname=localhost
 dbuser=root
 dbpass=root
@@ -84,13 +87,13 @@ echo "--------------------------------------"
 # CHECK :  Directory doesn't exist
 cd $rootpath
 
-# check if provided folder name already exists
+# Check if provided folder name already exists
 if [ -d $pathtoinstall ]; then
   error "Le dossier $pathtoinstall existe déjà. Par sécurité, je ne vais pas plus loin pour ne rien écraser."
   exit 1
 fi
 
-# create directory
+# Create directory
 bot "Je crée le dossier : $foldername"
 mkdir $foldername
 cd $foldername
@@ -99,11 +102,11 @@ cd $foldername
 bot "Je télécharge la dernière version de WordPress en français..."
 wp core download --locale=fr_FR --force
 
-# check version
+# Check version
 bot "J'ai récupéré cette version :"
 wp core version
 
-# create base configuration
+# Create base configuration
 bot "Je lance la configuration :"
 wp core config --dbname=$dbname --dbuser=$dbuser --dbpass=$dbpass --dbprefix=$dbprefix --extra-php <<PHP
 // Désactiver l'éditeur de thème et de plugins en administration
@@ -126,6 +129,13 @@ wp db create
 # Launch install
 bot "J'installe WordPress..."
 wp core install --url=$url --title="$title" --admin_user=$adminlogin --admin_email=$adminemail --admin_password=$adminpass
+
+# Plugins install
+bot "J'installe les plugins à partir de la liste des plugins"
+while read line
+do
+    wp plugin install $line --activate
+done < $pluginfilepath
 
 # Download from private git repository
 bot "Je télécharge le thème DFWP :"
@@ -200,6 +210,10 @@ wp theme activate $foldername
 # git init    # git project
 # git add -A  # Add all untracked files
 # git commit -m "Initial commit"   # Commit changes
+
+#Créer la page de la pattern library
+bot "Je créer la page pattern et l'associe au template adéquat."
+wp post create --post_type=page --post_title='Pattern' --post_status=publish --page_template='page-pattern.php'
 
 # Finish echo
 success "L'installation est terminée !"
