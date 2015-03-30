@@ -1,5 +1,4 @@
 backwpup
 wordpress-importer
 wordpress-seo
-advanced-custom-fields
 wp-super-cache
