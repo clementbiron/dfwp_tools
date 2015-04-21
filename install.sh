@@ -5,6 +5,7 @@
 # $1 = url
 # $2 = folder name
 # $3 = site title
+# $4 = acf pro keygen
 #
 # Inspirated from Maxime BJ
 # For more information, please visit 
@@ -25,13 +26,16 @@ rootpath="/var/www/public/"
 pathtoinstall="${rootpath}${foldername}"
 
 # Path to plugins.txt
-pluginfilepath="${pathtoinstall}/plugins.txt"
+pluginfilepath="${rootpath}/dfwp_install/plugins.txt"
 
 # Wp title
 title=$3
 
+# Acf key
+acfkey=$4
+
 # Admin login
-adminlogin="admin"
+adminlogin="nimda"
 adminpass="admin"
 adminemail="clement.biron@gmail.com"
 
@@ -98,6 +102,16 @@ bot "Je crée le dossier : $foldername"
 mkdir $foldername
 cd $foldername
 
+bot "Je crée le fichier de configuration wp-cli.yml"
+echo "
+# Configuration de wpcli
+# Voir http://wp-cli.org/config/
+
+# Les modules apaches à charger
+apache_modules:
+	- mod_rewrite
+" >> wp-cli.yml
+
 # Download WP
 bot "Je télécharge la dernière version de WordPress en français..."
 wp core download --locale=fr_FR --force
@@ -107,7 +121,7 @@ bot "J'ai récupéré cette version :"
 wp core version
 
 # Create base configuration
-bot "Je lance la configuration :"
+bot "Je lance la configuration"
 wp core config --dbname=$dbname --dbuser=$dbuser --dbpass=$dbpass --dbprefix=$dbprefix --extra-php <<PHP
 // Désactiver l'éditeur de thème et de plugins en administration
 define('DISALLOW_FILE_EDIT', true);
@@ -119,11 +133,11 @@ define('WP_POST_REVISIONS', 3);
 define('EMPTY_TRASH_DAYS', 7);
 
 //Mode debug
-define( 'WP_DEBUG', true );
+define('WP_DEBUG', true);
 PHP
 
 # Create database
-bot "Je crée la base de données :"
+bot "Je crée la base de données"
 wp db create
 
 # Launch install
@@ -131,66 +145,33 @@ bot "J'installe WordPress..."
 wp core install --url=$url --title="$title" --admin_user=$adminlogin --admin_email=$adminemail --admin_password=$adminpass
 
 # Plugins install
-bot "J'installe les plugins à partir de la liste des plugins"
+bot "J'installe les plugins à partir de la liste"
 while read line
 do
+	bot "-> Plugin $line"
     wp plugin install $line --activate
 done < $pluginfilepath
 
+#bot "J'installe la version pro de ACF avec le keygen passé en paramètre"
+cd $pathtoinstall
+cd wp-content/plugins/
+curl -L -v 'http://connect.advancedcustomfields.com/index.php?p=pro&a=download&k='$acfkey > advanced-custom-fields-pro.zip
+wp plugin install advanced-custom-fields-pro.zip --activate
+
 # Download from private git repository
-bot "Je télécharge le thème DFWP :"
+bot "Je télécharge le thème DFWP"
+cd $pathtoinstall
 cd wp-content/themes/
 git clone https://github.com/posykrat/dfwp.git
 
-bot "Je télécharge le thème DFWP_CHILD : "
-cd wp-content/themes/
+bot "Je télécharge le thème DFWP_CHILD"
 git clone https://github.com/posykrat/dfwp_child.git
 
-# Create standard pages
-# echo -e "Je crée les pages habituelles (Accueil, blog, contact...)"
-# wp post create --post_type=page --post_title='Accueil' --post_status=publish
-# wp post create --post_type=page --post_title='Blog' --post_status=publish
-# wp post create --post_type=page --post_title='Contact' --post_status=publish
-# wp post create --post_type=page --post_title='Mentions Légales' --post_status=publish
-
-# Create fake posts
-# echo -e "Je crée quelques faux articles"
-# curl http://loripsum.net/api/5 | wp post generate --post_content --count=5
-
-# Change Homepage
-# echo -e "Je change la page d'accueil et la page des articles"
-# wp option update show_on_front page
-# wp option update page_on_front 3
-# wp option update page_for_posts 4
-
-# Menu stuff
-# echo -e "Je crée le menu principal, assigne les pages, et je lie l'emplacement du thème : "
-# wp menu create "Menu Principal"
-# wp menu item add-post menu-principal 3
-# wp menu item add-post menu-principal 4
-# wp menu item add-post menu-principal 5
-# wp menu location assign menu-principal main-menu
-
-# Misc cleanup
-bot "Je supprime Hello Dolly, les thèmes de base et les articles exemples"
-wp post delete 1 --force # Article exemple - no trash. Comment is also deleted
-wp post delete 2 --force # page exemple
-wp plugin delete hello
-wp theme delete twentyfourteen
-wp theme delete twentythirteen	
-wp option update blogdescription ''
-
-# Permalinks to /%postname%/
-bot "J'active la structure des permaliens"
-wp rewrite structure "/%postname%/" --hard
-wp rewrite flush --hard
-
-# Rename child theme
-bot "Je renomme le theme DFWP_CHILD en $foldername"
-mv dfwp_child $foldername
+bot "Je copie le dossier dfwp_child vers $foldername"
+cp -rf dfwp_child $foldername
 
 # Modify style.css
-bot "Je modifie le fichier style.css"
+bot "Je modifie le fichier style.css du thème $foldername"
 echo "/* 
 	Theme Name: $foldername
 	Description: Child of DFWP theme framework
@@ -199,23 +180,62 @@ echo "/*
 	Version: 1.0 
 */" > $foldername/style.css
 
+# Misc cleanup
+bot "Je supprime les posts, comments et terms"
+wp site empty --yes
+
+bot "Je supprime Hello dolly et les themes de bases"
+wp plugin delete hello
+wp theme delete twentyfourteen
+wp theme delete twentythirteen
+wp theme delete twentyfifteen
+wp option update blogdescription ''
+
+# Create standard pages
+bot "Je crée les pages standards accueil et mentions légales"
+wp post create --post_type=page --post_title='Accueil' --post_status=publish
+wp post create --post_type=page --post_title='Mentions Légales' --post_status=publish
+
+# La page d'accueil est une page
+# Et c'est la page qui se nomme accueil
+bot "Configuration de la page accueil"
+wp option update show_on_front 'page'
+wp option update page_on_front $(wp post list --post_type=page --post_status=publish --posts_per_page=1 --pagename=Accueil --field=ID --format=ids)
+
+# Permalinks to /%postname%/
+bot "J'active la structure des permaliens /%postname%/ et génère le fichier .htaccess"
+wp rewrite structure "/%postname%/" --hard
+wp rewrite flush --hard
+
+#Modifier le fichier htaccess
+bot "J'ajoute des règles Apache dans le fichier htaccess"
+cd $pathtoinstall
+echo "
+#Interdire le listage des repertoires
+Options All -Indexes
+
+#Interdire l'accès au fichier wp-config.php
+<Files wp-config.php>
+ 	order allow,deny
+	deny from all
+</Files>
+
+#Intedire l'accès au fichier htaccess lui même
+<Files .htaccess>
+	order allow,deny 
+	deny from all 
+</Files>
+" >> .htaccess
+
 # Activate theme
 bot "J'active le thème $foldername:"
 wp theme activate $foldername
 
-# Git project
-# REQUIRED : download Git at http://git-scm.com/downloads
-# echo -e "Je Git le projet :"
-# cd ../..
-# git init    # git project
-# git add -A  # Add all untracked files
-# git commit -m "Initial commit"   # Commit changes
-
 #Créer la page de la pattern library
-bot "Je créer la page pattern et l'associe au template adéquat."
+bot "Je crée la page pattern et l'associe au template adéquat."
 wp post create --post_type=page --post_title='Pattern' --post_status=publish --page_template='page-pattern.php'
 
-# Finish echo
+# Finish !
 success "L'installation est terminée !"
 echo "--------------------------------------"
 echo -e "Url			: $url"
@@ -229,3 +249,19 @@ echo -e "DB pass 		: root"
 echo -e "DB prefix 		: pwrxt_$foldername"
 echo -e "WP_DEBUG 		: TRUE"
 echo "--------------------------------------"
+
+# Menu stuff
+# echo -e "Je crée le menu principal, assigne les pages, et je lie l'emplacement du thème : "
+# wp menu create "Menu Principal"
+# wp menu item add-post menu-principal 3
+# wp menu item add-post menu-principal 4
+# wp menu item add-post menu-principal 5
+# wp menu location assign menu-principal main-menu
+
+# Git project
+# REQUIRED : download Git at http://git-scm.com/downloads
+# echo -e "Je Git le projet :"
+# cd ../..
+# git init    # git project
+# git add -A  # Add all untracked files
+# git commit -m "Initial commit"   # Commit changes

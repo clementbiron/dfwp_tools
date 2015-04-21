@@ -1,4 +1,5 @@
-backwpup
 wordpress-importer
 wordpress-seo
 wp-super-cache
+custom-post-type-ui
+codepress-admin-columns
