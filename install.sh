@@ -1,50 +1,11 @@
 #!/bin/bash
 #
 # Automatize WordPress installation
-# bash install.sh url foldername "title"
-# $1 = url
-# $2 = folder name
-# $3 = site title
-# $4 = acf pro keygen
+# bash install.sh
 #
 # Inspirated from Maxime BJ
 # For more information, please visit 
 # http://www.wp-spread.com/tuto-wp-cli-comment-installer-et-configurer-wordpress-en-moins-dune-minute-et-en-seulement-un-clic/
-# 
-#  ==============================
-#  VARS
-#  ==============================
-
-# Local url 
-url=$1
-
-# Folder name
-foldername=$2
-
-# Path to install your WPs
-rootpath="/var/www/public/"
-pathtoinstall="${rootpath}${foldername}"
-
-# Path to plugins.txt
-pluginfilepath="${rootpath}/dfwp_install/plugins.txt"
-
-# Wp title
-title=$3
-
-# Acf key
-acfkey=$4
-
-# Admin login
-adminlogin="nimda"
-adminpass="admin"
-adminemail="clement.biron@gmail.com"
-
-# DB
-dbname=localhost
-dbuser=root
-dbpass=root
-dbprefix="pwrxt_$foldername"
-
 
 #  ==============================
 #  ECHO COLORS, FUNCTIONS AND VARS
@@ -78,6 +39,74 @@ function success {
 	line
 	echo -e "${bggreen}${bold}${gray} $1 ${normal}"
 }
+
+#  ==============================
+#  VARS
+#  ==============================
+
+# On récupère l'url
+# Si pas de valeur renseignée, message d'erreur et exit
+read -p "Url du projet ? " url
+if [ -z $url ]
+	then
+		error 'Renseigner une url'
+		exit
+fi
+
+# On récupère le nom du dossier
+# Si pas de valeur renseignée, message d'erreur et exit
+read -p "Nom du dossier ? " foldername
+if [ -z $foldername ]
+	then
+		error 'Renseigner un nom de dossier'
+		exit
+fi
+
+# On récupère le titre du site
+# Si pas de valeur renseignée, message d'erreur et exit
+read -p "Titre du projet ? " title
+if [ -z "$title" ]
+	then
+		error 'Renseigner un titre pour le site'
+		exit
+fi
+
+# On récupère la clé acf 
+# Si pas de valeur renseignée, message d'erreur 
+read -p "Clé ACF pro ? " acfkey;
+if [ -z $acfkey ]
+	then
+		error 'ACF pro ne sera pas installé'
+fi
+
+# Paths
+rootpath="/var/www/public/"
+pathtoinstall="${rootpath}${foldername}"
+pluginfilepath="${rootpath}dfwp_install/plugins.txt"
+
+success "Récap"
+echo "--------------------------------------"
+echo -e "Url : $url"
+echo -e "Foldername : $foldername"
+echo -e "Titre du projet : $title"
+if [ -n $acfkey ]
+	then
+		echo -e "Clé ACF pro : $acfkey"
+fi
+echo -e "Path : $pathtoinstall"
+echo -e "Liste des plugins à installer : $pluginfilepath"
+echo "--------------------------------------"
+
+# Admin login
+adminlogin="nimda"
+adminpass="admin"
+adminemail="clement.biron@gmail.com"
+
+# DB
+dbname=localhost
+dbuser=root
+dbpass=root
+dbprefix="pwrxt_$foldername"
 
 
 #  ==============================
@@ -152,11 +181,15 @@ do
     wp plugin install $line --activate
 done < $pluginfilepath
 
-#bot "J'installe la version pro de ACF avec le keygen passé en paramètre"
-cd $pathtoinstall
-cd wp-content/plugins/
-curl -L -v 'http://connect.advancedcustomfields.com/index.php?p=pro&a=download&k='$acfkey > advanced-custom-fields-pro.zip
-wp plugin install advanced-custom-fields-pro.zip --activate
+# Si on a bien une clé acf pro
+if [ -n $acfkey ]
+	then
+		bot "-> J'installe la version pro de ACF"
+		cd $pathtoinstall
+		cd wp-content/plugins/
+		curl -L -v 'http://connect.advancedcustomfields.com/index.php?p=pro&a=download&k='$acfkey > advanced-custom-fields-pro.zip
+		wp plugin install advanced-custom-fields-pro.zip --activate
+fi
 
 # Download from private git repository
 bot "Je télécharge le thème DFWP"
@@ -249,6 +282,43 @@ echo -e "DB pass 		: root"
 echo -e "DB prefix 		: pwrxt_$foldername"
 echo -e "WP_DEBUG 		: TRUE"
 echo "--------------------------------------"
+
+
+# Si on veut versionner le projet sur Bibucket
+read -p "Versionner le projet sur Bitbucket (y/n) ? " yn
+case "$yn" in
+    y ) 
+		# On se positione dans le dossier du thème
+		cd $pathtoinstall
+		cd wp-content/themes/
+		cd $foldername
+
+		# On supprime le dossier git présent
+		rm -f -r .git
+	
+		# On récupère les infos nécessaire
+		read -p "Login ? " login
+		read -p "Password ? " pass
+		read -p "Nom du dépôt ? " depot
+		
+		#Créer le dépôt sur Bitbucket
+		curl --user $login:$pass https://api.bitbucket.org/1.0/repositories/ --data name=$depot --data is_private='true'
+	    
+	    # Init git et lien avec le dépôt
+	    git init 
+	    git remote add origin git@bitbucket.org:$login/$depot.git 
+	    
+	    # Ajouter les fichiers untracked, commit et push toussa
+	    git add -A 
+	    git commit -m 'first commit'
+	    git push -u origin master
+
+	    success "OK ! adresse du dépôt est : https://bitbucket.org/$login/$depot";;
+    n ) 
+		echo "Tans pis !";;
+esac
+
+
 
 # Menu stuff
 # echo -e "Je crée le menu principal, assigne les pages, et je lie l'emplacement du thème : "
