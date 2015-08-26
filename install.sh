@@ -283,7 +283,6 @@ echo -e "DB prefix 		: pwrxt_$foldername"
 echo -e "WP_DEBUG 		: TRUE"
 echo "--------------------------------------"
 
-
 # Si on veut versionner le projet sur Bibucket
 read -p "Versionner le projet sur Bitbucket (y/n) ? " yn
 case "$yn" in
@@ -317,6 +316,7 @@ case "$yn" in
     n ) 
 		echo "Tans pis !";;
 esac
+
 
 
 

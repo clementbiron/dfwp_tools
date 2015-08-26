@@ -1,5 +1,5 @@
 wordpress-importer
 wordpress-seo
-wp-super-cache
 custom-post-type-ui
 codepress-admin-columns
+sf-adminbar-tools
