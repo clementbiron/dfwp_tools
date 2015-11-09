@@ -213,6 +213,10 @@ echo "/*
 	Version: 1.0 
 */" > $foldername/style.css
 
+# Activate theme
+bot "J'active le thème $foldername:"
+wp theme activate $foldername
+
 # Misc cleanup
 bot "Je supprime les posts, comments et terms"
 wp site empty --yes
@@ -259,10 +263,6 @@ Options All -Indexes
 	deny from all 
 </Files>
 " >> .htaccess
-
-# Activate theme
-bot "J'active le thème $foldername:"
-wp theme activate $foldername
 
 #Créer la page de la pattern library
 bot "Je crée la page pattern et l'associe au template adéquat."
