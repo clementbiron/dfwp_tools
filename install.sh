@@ -89,7 +89,7 @@ echo "--------------------------------------"
 echo -e "Url : $url"
 echo -e "Foldername : $foldername"
 echo -e "Titre du projet : $title"
-if [ -n $acfkey ]
+if [ -n "$acfkey" ]
 	then
 		echo -e "Clé ACF pro : $acfkey"
 fi
@@ -182,7 +182,7 @@ do
 done < $pluginfilepath
 
 # Si on a bien une clé acf pro
-if [ -n $acfkey ]
+if [ -n "$acfkey" ]
 	then
 		bot "-> J'installe la version pro de ACF"
 		cd $pathtoinstall
