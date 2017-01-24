@@ -40,9 +40,27 @@ function success {
 	echo -e "${bggreen}${bold}${gray} $1 ${normal}"
 }
 
+
 #  ==============================
 #  VARS
 #  ==============================
+
+# Root Path
+# Si pas de valeur renseignée, message d'erreur et exit
+read -p "Root path (exemple : /var/www/public/ ) ? " rootpath
+if [ -z $rootpath ]
+	then
+		error 'Renseigner un root path'
+		exit
+fi
+
+# Chemin vers le fichier .txt qui liste les plugins à installer
+# Si pas de valeur renseignée, message d'erreur et exit
+read -p "Chemin vers le fichier .txt qui liste les plugins à installer ? " pluginfilepath
+if [ -z $pluginfilepath ]
+	then
+		error 'Aucun plugin ne sera installé'
+fi
 
 # On récupère l'url
 # Si pas de valeur renseignée, message d'erreur et exit
@@ -71,29 +89,36 @@ if [ -z "$title" ]
 		exit
 fi
 
-# On récupère la clé acf 
-# Si pas de valeur renseignée, message d'erreur 
+# On récupère la clé acf si disponible
 read -p "Clé ACF pro ? " acfkey;
-if [ -z $acfkey ]
-	then
-		error 'ACF pro ne sera pas installé'
-fi
+
+
+# Langue d'installation de WP ?
+wplang="fr_FR"
+
+# TODO : quand on passe en_EN ça marche pas
+# read -p "Code de la langue de WP (fr_FR par défaut) ? " wplang;
+# echo $wplang
+
 
 # Paths
-rootpath="/var/www/public/"
 pathtoinstall="${rootpath}${foldername}"
-pluginfilepath="${rootpath}dfwp_install/plugins.txt"
 
 success "Récap"
 echo "--------------------------------------"
 echo -e "Url : $url"
 echo -e "Foldername : $foldername"
 echo -e "Titre du projet : $title"
+echo -e  "Root path : $rootpath"
+echo -e "Path du propjet : $pathtoinstall"
+if [ -n "$pluginfilepath" ]
+	then
+		echo -e "Fichier qui liste les plugins à installer : $pluginfilepath"
+fi
 if [ -n "$acfkey" ]
 	then
 		echo -e "Clé ACF pro : $acfkey"
 fi
-echo -e "Path : $pathtoinstall"
 echo -e "Liste des plugins à installer : $pluginfilepath"
 echo "--------------------------------------"
 
@@ -105,8 +130,8 @@ adminemail="clement.biron@gmail.com"
 # DB
 dbname=localhost
 dbuser=root
-dbpass=root
-dbprefix="pwrxt_$foldername"
+dbpass=""
+dbprefix="irwopzd_$foldername"
 
 
 #  ==============================
@@ -127,11 +152,11 @@ if [ -d $pathtoinstall ]; then
 fi
 
 # Create directory
-bot "Je crée le dossier : $foldername"
+bot "-> Je crée le dossier : $foldername"
 mkdir $foldername
 cd $foldername
 
-bot "Je crée le fichier de configuration wp-cli.yml"
+bot "-> Je crée le fichier de configuration wp-cli.yml"
 echo "
 # Configuration de wpcli
 # Voir http://wp-cli.org/config/
@@ -142,15 +167,11 @@ apache_modules:
 " >> wp-cli.yml
 
 # Download WP
-bot "Je télécharge la dernière version de WordPress en français..."
-wp core download --locale=fr_FR --force
-
-# Check version
-bot "J'ai récupéré cette version :"
-wp core version
+bot "-> Je télécharge la dernière version de WordPress $wplang..."
+wp core download --locale=$wplang --force
 
 # Create base configuration
-bot "Je lance la configuration"
+bot "-> Je lance la configuration de WP"
 wp core config --dbname=$dbname --dbuser=$dbuser --dbpass=$dbpass --dbprefix=$dbprefix --extra-php <<PHP
 // Désactiver l'éditeur de thème et de plugins en administration
 define('DISALLOW_FILE_EDIT', true);
@@ -166,20 +187,24 @@ define('WP_DEBUG', true);
 PHP
 
 # Create database
-bot "Je crée la base de données"
+bot "-> Je crée la base de données"
 wp db create
 
 # Launch install
-bot "J'installe WordPress..."
+bot "-> J'installe WordPress..."
 wp core install --url=$url --title="$title" --admin_user=$adminlogin --admin_email=$adminemail --admin_password=$adminpass
 
-# Plugins install
-bot "J'installe les plugins à partir de la liste"
-while read line || [ -n "$line" ]
-do
-	bot "-> Plugin $line"
-    wp plugin install $line --activate
-done < $pluginfilepath
+# Si on a bien un fichier qui listes les plugins à installer
+if [ -n "$pluginfilepath" ]
+	then
+	    # Plugins install
+        bot "-> J'installe les plugins à partir de la liste"
+        while read line || [ -n "$line" ]
+        do
+            bot "-> Plugin $line"
+            wp plugin install $line --activate
+        done < $pluginfilepath
+fi
 
 # Si on a bien une clé acf pro
 if [ -n "$acfkey" ]
@@ -192,19 +217,24 @@ if [ -n "$acfkey" ]
 fi
 
 # Download from private git repository
-bot "Je télécharge le thème DFWP"
-cd $pathtoinstall
-cd wp-content/themes/
+bot "-> Je télécharge le thème DFWP"
+cd $pathtoinstall/wp-content/themes/
 git clone https://github.com/posykrat/dfwp.git
 
-bot "Je télécharge le thème DFWP_CHILD"
+bot "-> Je télécharge le thème DFWP_CHILD"
 git clone https://github.com/posykrat/dfwp_child.git
 
-bot "Je copie le dossier dfwp_child vers $foldername"
+bot "-> Je copie le dossier dfwp_child vers $foldername"
 cp -rf dfwp_child $foldername
 
+bot "-> Je configure le thème $foldername"
+cd $pathtoinstall/wp-content/themes/$foldername/build
+npm install --loglevel=silent
+bower install
+
 # Modify style.css
-bot "Je modifie le fichier style.css du thème $foldername"
+bot "-> Je modifie le fichier style.css du thème $foldername"
+cd $pathtoinstall/wp-content/themes/
 echo "/* 
 	Theme Name: $foldername
 	Description: Child of DFWP theme framework
@@ -214,38 +244,38 @@ echo "/*
 */" > $foldername/style.css
 
 # Activate theme
-bot "J'active le thème $foldername:"
+bot "-> J'active le thème $foldername:"
 wp theme activate $foldername
 
 # Misc cleanup
-bot "Je supprime les posts, comments et terms"
+bot "-> Je supprime les posts, comments et terms"
 wp site empty --yes
 
-bot "Je supprime Hello dolly et les themes de bases"
+bot "-> Je supprime Hello dolly et les themes de bases"
 wp plugin delete hello
-wp theme delete twentyfourteen
-wp theme delete twentythirteen
 wp theme delete twentyfifteen
+wp theme delete twentyseventeen
+wp theme delete twentysixteen
 wp option update blogdescription ''
 
 # Create standard pages
-bot "Je crée les pages standards accueil et mentions légales"
+bot "-> Je crée les pages standards accueil et mentions légales"
 wp post create --post_type=page --post_title='Accueil' --post_status=publish
 wp post create --post_type=page --post_title='Mentions Légales' --post_status=publish
 
 # La page d'accueil est une page
 # Et c'est la page qui se nomme accueil
-bot "Configuration de la page accueil"
+bot "-> Configuration de la page accueil"
 wp option update show_on_front 'page'
 wp option update page_on_front $(wp post list --post_type=page --post_status=publish --posts_per_page=1 --pagename=Accueil --field=ID --format=ids)
 
 # Permalinks to /%postname%/
-bot "J'active la structure des permaliens /%postname%/ et génère le fichier .htaccess"
+bot "-> J'active la structure des permaliens /%postname%/ et génère le fichier .htaccess"
 wp rewrite structure "/%postname%/" --hard
 wp rewrite flush --hard
 
 #Modifier le fichier htaccess
-bot "J'ajoute des règles Apache dans le fichier htaccess"
+bot "-> J'ajoute des règles Apache dans le fichier htaccess"
 cd $pathtoinstall
 echo "
 #Interdire le listage des repertoires
@@ -264,24 +294,10 @@ Options All -Indexes
 </Files>
 " >> .htaccess
 
-#Créer la page de la pattern library
-bot "Je crée la page pattern et l'associe au template adéquat."
-wp post create --post_type=page --post_title='Pattern' --post_status=publish --page_template='page-pattern.php'
+# Créer la page du styleguide
+bot "-> Je crée la page pour le styleguide et l'associe au template qui va bien."
+wp post create --post_type=page --post_title='Styleguide' --post_status=publish --page_template='page-styleguide.php'
 
-# Finish !
-success "L'installation est terminée !"
-echo "--------------------------------------"
-echo -e "Url			: $url"
-echo -e "Path			: $pathtoinstall"
-echo -e "Admin login	: $adminlogin"
-echo -e "Admin pass		: $adminpass"
-echo -e "Admin email	: $adminemail"
-echo -e "DB name 		: localhost"
-echo -e "DB user 		: root"
-echo -e "DB pass 		: root"
-echo -e "DB prefix 		: pwrxt_$foldername"
-echo -e "WP_DEBUG 		: TRUE"
-echo "--------------------------------------"
 
 # Si on veut versionner le projet sur Bibucket
 read -p "Versionner le projet sur Bitbucket (y/n) ? " yn
@@ -312,11 +328,26 @@ case "$yn" in
 	    git commit -m 'first commit'
 	    git push -u origin master
 
-	    success "OK ! adresse du dépôt est : https://bitbucket.org/$login/$depot";;
+	    success "-> OK ! adresse du dépôt est : https://bitbucket.org/$login/$depot";;
     n ) 
 		echo "Tans pis !";;
 esac
 
+
+# Finish !
+success "L'installation est terminée !"
+echo "--------------------------------------"
+echo -e "Url			: $url"
+echo -e "Path			: $pathtoinstall"
+echo -e "Admin login	: $adminlogin"
+echo -e "Admin pass		: $adminpass"
+echo -e "Admin email	: $adminemail"
+echo -e "DB name 		: $dbname"
+echo -e "DB user 		: $dbuser"
+echo -e "DB pass 		: $dbpass"
+echo -e "DB prefix 		: irwopzd_$foldername"
+echo -e "WP_DEBUG 		: TRUE"
+echo "--------------------------------------"
 
 
 

@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
+#
+#
+#
 # Script d'export de BDD
 # Accès SSH nécesaire
-
+#
+#
+#
 
 # Config vhost
 vhost_local='http://localhost/exemple'
 vhost_dist='http://preprod.exemple.com'
 
 # Config path
+projet_folder='h:/www/labinocle'
 tmp_dist_folder='/home/username/tmp'
 project_dist_folder='/home/username/public_html/preprod/exemple'
 
@@ -18,14 +24,7 @@ export_file_name='export-'$d'.sql'
 # Config SSH
 ssh_info='user@server'
 
-# Environnement du script
-# Si execution sur windaube, les alias cygwin ne sont pas reconnu
-# On crée donc une variable wp qui pointe vers le bat de wp cli
-wp='C:/wp-cli/bin/wp.bat'
-
-# Sinon on pointe vers wp
-# wp=wp
-
+cd $projet_folder
 
 echo "Export de la bdd locale"
 $wp search-replace $vhost_local $vhost_dist --export=$export_file_name

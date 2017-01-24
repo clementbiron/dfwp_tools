@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
+#
+#
+#
 # Script d'import de BDD
 # Accès SSH nécesaire
-
+#
+#
+#
 
 # Config vhost
 vhost_local='http://localhost/exemple'
@@ -19,17 +24,6 @@ export_file_name='export-'$d'.xml'
 # Config SSH
 ssh_info='user@server'
 
-# Environnement du script
-# Si execution sur windaube, les alias cygwin ne sont pas reconnu
-# On crée donc une variable wp qui pointe vers le bat de wp cli
-wp='C:/wp-cli/bin/wp.bat'
-mysql='C:/wamp/bin/mysql/mysql5.6.17/bin/mysql'
-mysqldump='C:/wamp/bin/mysql/mysql5.6.17/bin/mysqldump'
-
-# Sinon on pointe vers wp
-# wp=wp
-
-
 echo "On exporte la base distante"
 $wp search-replace $vhost_dist $vhost_local --export=$project_dist_folder/$export_file_name --ssh=$ssh_info --path=$project_dist_folder
 echo "--------------------------------------"
@@ -45,6 +39,5 @@ echo "--------------------------------------"
 echo "Suppression du fichier d'import en local"
 # rm $export_file_name
 echo "--------------------------------------"
-
 
 exit
