@@ -54,14 +54,6 @@ if [ -z $rootpath ]
 		exit
 fi
 
-# Chemin vers le fichier .txt qui liste les plugins à installer
-# Si pas de valeur renseignée, message d'erreur et exit
-read -p "Chemin vers le fichier .txt qui liste les plugins à installer ? " pluginfilepath
-if [ -z $pluginfilepath ]
-	then
-		error 'Aucun plugin ne sera installé'
-fi
-
 # On récupère l'url
 # Si pas de valeur renseignée, message d'erreur et exit
 read -p "Url du projet ? " url
@@ -88,6 +80,9 @@ if [ -z "$title" ]
 		error 'Renseigner un titre pour le site'
 		exit
 fi
+
+# Chemin vers le fichier .txt qui liste les plugins à installer
+read -p "Chemin vers le fichier .txt qui liste les plugins à installer ? " pluginfilepath
 
 # On récupère la clé acf si disponible
 read -p "Clé ACF pro ? " acfkey;
@@ -228,11 +223,17 @@ bot "-> Je copie le dossier dfwp_child vers $foldername"
 cp -rf dfwp_child $foldername
 
 bot "-> Je configure le thème $foldername"
-cd $pathtoinstall/wp-content/themes/$foldername/build
-npm install --loglevel=silent
+cd $pathtoinstall/wp-content/themes/$foldername/build/
+npm install
 bower install
+rm -r -f  .git
 
-# Modify style.css
+# Supprimer le dossier git
+bot "-> Je supprime le dossier .git du thème $foldername"
+cd $pathtoinstall/wp-content/themes/$foldername/
+rm -r -f  .git
+
+# Modifier le fichier style.css
 bot "-> Je modifie le fichier style.css du thème $foldername"
 cd $pathtoinstall/wp-content/themes/
 echo "/* 
