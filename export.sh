@@ -27,7 +27,7 @@ ssh_info='user@server'
 cd $projet_folder
 
 echo "Export de la bdd locale"
-$wp search-replace $vhost_local $vhost_dist --export=$export_file_name
+wp search-replace $vhost_local $vhost_dist --export=$export_file_name
 echo "--------------------------------------"
 
 echo "Copie de du fichier sql"

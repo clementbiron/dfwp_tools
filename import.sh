@@ -25,7 +25,7 @@ export_file_name='export-'$d'.xml'
 ssh_info='user@server'
 
 echo "On exporte la base distante"
-$wp search-replace $vhost_dist $vhost_local --export=$project_dist_folder/$export_file_name --ssh=$ssh_info --path=$project_dist_folder
+wp search-replace $vhost_dist $vhost_local --export=$project_dist_folder/$export_file_name --ssh=$ssh_info --path=$project_dist_folder
 echo "--------------------------------------"
 
 echo "Copie de du fichier sql sur la machine locale"
@@ -33,7 +33,7 @@ scp $ssh_info:$project_dist_folder/$export_file_name $export_file_name
 echo "--------------------------------------"
 
 echo "Import de la bdd "
-$wp db import $export_file_name
+wp db import $export_file_name
 echo "--------------------------------------"
 
 echo "Suppression du fichier d'import en local"
