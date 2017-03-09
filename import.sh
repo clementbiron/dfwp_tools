@@ -1,43 +1,70 @@
-#!/usr/bin/env bash
-#
-#
+#!/bin/bash
 #
 # Script d'import de BDD
 # Accès SSH nécesaire
-#
-#
-#
 
-# Config vhost
-vhost_local='http://localhost/exemple'
-vhost_dist='http://preprod.exemple.com'
 
-# Config path
-tmp_dist_folder='/home/username/tmp'
-project_dist_folder='/home/username/public_html/preprod/exemple'
+# 
+# Config
+#  
+vhost_local='http://localhost/project'
+projet_local_folder='h:/www/project'
+prefix_local=''
 
-# Config file name
+vhost_dist='http://preprod.project.com'
+project_dist_folder='~/www/preprod/project'
+prefix_dist=''
+
 d=$(date +%Y-%m-%d_%Hh-%Mm-%Ss)
-#export_file_name='export-'$d'.sql'
-export_file_name='export-'$d'.xml'
+export_dist_folder='tmp'
+export_file_name='export-'$d'.sql'
 
-# Config SSH
-ssh_info='user@server'
+ssh_info='user@domain.com'
 
-echo "On exporte la base distante"
-wp search-replace $vhost_dist $vhost_local --export=$project_dist_folder/$export_file_name --ssh=$ssh_info --path=$project_dist_folder
-echo "--------------------------------------"
+
+# 
+# Process
+#  
+ssh $ssh_info "
+	
+	echo "On se positione dans le dossier du projet"
+	cd $project_dist_folder
+	pwd
+	echo "--------------------------------------"
+
+	echo "On exporte la base distante"
+	wp search-replace $vhost_dist $vhost_local --export=$export_file_name
+	echo "--------------------------------------"
+
+	exit
+"
 
 echo "Copie de du fichier sql sur la machine locale"
 scp $ssh_info:$project_dist_folder/$export_file_name $export_file_name
 echo "--------------------------------------"
 
-echo "Import de la bdd "
+ssh $ssh_info "
+	echo "On supprime le fichier sur la machine distante"
+	cd $project_dist_folder
+	rm -f $export_file_name
+"
+echo "--------------------------------------"
+
+echo "On change les prefixes"
+sed -i "s/${prefix_dist}/${prefix_local}/g" $export_file_name
+echo "--------------------------------------"
+
+echo "On copie le fichier sql dans le dossier du projet local"
+cp $export_file_name $projet_local_folder/$export_file_name
+echo "--------------------------------------"
+
+echo "On importe la base en local"
+cd $projet_local_folder
 wp db import $export_file_name
 echo "--------------------------------------"
 
-echo "Suppression du fichier d'import en local"
-# rm $export_file_name
+echo "Suppression du fichier .sql dans le dossier du projet"
+rm -f $export_file_name
 echo "--------------------------------------"
 
 exit
