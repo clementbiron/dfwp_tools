@@ -1,45 +1,68 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
-#
-#
-# Script d'export de BDD
+# Script d'expoort de BDD distante
 # Accès SSH nécesaire
-#
-#
-#
 
-# Config vhost
-vhost_local='http://localhost/exemple'
-vhost_dist='http://preprod.exemple.com'
+# 
+# Config
+#  
+vhost_local='http://localhost/project'
+projet_local_folder='h:/www/project'
+prefix_local=''
 
-# Config path
-projet_folder='h:/www/labinocle'
-tmp_dist_folder='/home/username/tmp'
-project_dist_folder='/home/username/public_html/preprod/exemple'
+vhost_dist='http://preprod.project.com'
+project_dist_folder='~/www/preprod/project'
+prefix_dist=''
 
-# Config file name
 d=$(date +%Y-%m-%d_%Hh-%Mm-%Ss)
-export_file_name='export-'$d'.sql'
+export_dist_folder='tmp'
+export_file_name='export-local-'$d'.sql'
 
-# Config SSH
-ssh_info='user@server'
+ssh_info='user@domain.com'
+script_dir='h:/www/_lab/import-export/project'
 
-cd $projet_folder
+# 
+# Process
+#  
+cd $projet_local_folder
+pwd
 
 echo "Export de la bdd locale"
-wp search-replace $vhost_local $vhost_dist --export=$export_file_name
+php C:/wp-cli/wp-cli.phar search-replace $vhost_local $vhost_dist --export=$export_file_name
 echo "--------------------------------------"
 
-echo "Copie de du fichier sql"
-scp $export_file_name $ssh_info:$tmp_dist_folder
+echo "On change les prefixes"
+sed -i "s/${prefix_local}/${prefix_dist}/g" $export_file_name
 echo "--------------------------------------"
 
-echo "Suppression du fichier d'export en local"
-rm $export_file_name
+echo "On copie le fichier sql dans le dossier du script"
+cp $export_file_name $script_dir
 echo "--------------------------------------"
 
-echo "Connexion SSH, import des données et suppresion du fichier sql"
-ssh $ssh_info "cd $project_dist_folder && php ~/bin/wp db import $tmp_dist_folder/$export_file_name && rm $tmp_dist_folder/$export_file_name"
+echo "Suppression du fichier .sql dans le dossier du projet"
+rm -f $export_file_name
 echo "--------------------------------------"
+
+echo "Copie du fichier sql sur le serveur distant"
+cd $script_dir
+scp $export_file_name $ssh_info:$project_dist_folder
+echo "--------------------------------------"
+
+ssh $ssh_info "
+	
+	echo "On se positione dans le dossier du projet sur le serveur distant"
+	cd $project_dist_folder
+	echo "--------------------------------------"
+
+	echo "On importe la base locale sur le serveur distant"
+	wp db import $export_file_name
+	echo "--------------------------------------"
+
+	echo "Suppression du fichier .sql sur le serveur distant"
+	rm -f $export_file_name
+	echo "--------------------------------------"
+
+	exit
+"
 
 exit
