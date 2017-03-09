@@ -32,10 +32,6 @@ bash install.sh
 
 Warning: it's a draft copy, please don't use before checking the code and adpat it 
 
-## Features
-- Export local database and rename url
-- Copy local backup of database to remote server via scp
-- Import databse in the remote server
 
 ## Use :
 bash export.sh
@@ -44,4 +40,7 @@ bash export.sh
 
 ### import.sh
 
-Warning: not functionnal for now
+Warning: it's a draft copy, please don't use before checking the code and adpat it 
+
+## Use :
+bash import.sh
