@@ -23,6 +23,9 @@ Warning: this script is no longer valid, please adapted it to your needs
 - Install and active ACF Pro with your keygen
 - Allow to push projet on BitBucket
 
+## Config :
+Fill config.sh file
+
 ## Use :
 bash install.sh
 

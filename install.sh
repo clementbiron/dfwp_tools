@@ -40,72 +40,46 @@ function success {
 	echo -e "${bggreen}${bold}${gray} $1 ${normal}"
 }
 
+#  ==============================
+#  CONFIG
+#  ==============================
+read -p "Chemin du fichier de config (h:/www/_lab/config.sh) : " config
+if [ -z $config ]
+	then
+		error 'Renseigner un fichier de config'
+		exit
+fi
+
+# Chargement du fichier de config
+source $config
 
 #  ==============================
 #  VARS
 #  ==============================
 
-# Root Path
-# Si pas de valeur renseignée, message d'erreur et exit
-read -p "Root path (exemple : /var/www/public/ ) ? " rootpath
-if [ -z $rootpath ]
-	then
-		error 'Renseigner un root path'
-		exit
-fi
-
-# On récupère l'url
-# Si pas de valeur renseignée, message d'erreur et exit
-read -p "Url du projet ? " url
-if [ -z $url ]
-	then
-		error 'Renseigner une url'
-		exit
-fi
-
-# On récupère le nom du dossier
-# Si pas de valeur renseignée, message d'erreur et exit
-read -p "Nom du dossier ? " foldername
-if [ -z $foldername ]
-	then
-		error 'Renseigner un nom de dossier'
-		exit
-fi
-
-# On récupère le titre du site
-# Si pas de valeur renseignée, message d'erreur et exit
-read -p "Titre du projet ? " title
-if [ -z "$title" ]
-	then
-		error 'Renseigner un titre pour le site'
-		exit
-fi
-
-# Chemin vers le fichier .txt qui liste les plugins à installer
-read -p "Chemin vers le fichier .txt qui liste les plugins à installer ? " pluginfilepath
-
-# On récupère la clé acf si disponible
-read -p "Clé ACF pro ? " acfkey;
-
-
-# Langue d'installation de WP ?
-wplang="fr_FR"
-
-# TODO : quand on passe en_EN ça marche pas
-# read -p "Code de la langue de WP (fr_FR par défaut) ? " wplang;
-# echo $wplang
-
+# DB
+dbprefix="$prefix_$foldername"
 
 # Paths
 pathtoinstall="${rootpath}${foldername}"
 
 success "Récap"
 echo "--------------------------------------"
-echo -e "Url : $url"
-echo -e "Foldername : $foldername"
-echo -e "Titre du projet : $title"
-echo -e  "Root path : $rootpath"
-echo -e "Path du propjet : $pathtoinstall"
+echo -e "Root path                   : $rootpath"
+echo -e "Path du projet              : $pathtoinstall"
+echo -e "Url                         : $url"
+echo -e "Langue iso                  : $wplang"
+echo -e "Foldername                  : $foldername"
+echo -e "Titre du projet             : $title"
+echo -e "Nom base de données         : $dbname"
+echo -e "Utilisateur base de données : $dbuser"
+echo -e "Password base de données    : $dbpass"
+echo -e "Prefix base de données      : $dbprefix"
+echo -e "Login admin                 : $adminlogin"
+echo -e "Pass admin                  : $adminpass"
+echo -e "Email admin                 : $adminemail"
+
+
 if [ -n "$pluginfilepath" ]
 	then
 		echo -e "Fichier qui liste les plugins à installer : $pluginfilepath"
@@ -117,16 +91,6 @@ fi
 echo -e "Liste des plugins à installer : $pluginfilepath"
 echo "--------------------------------------"
 
-# Admin login
-adminlogin="nimda"
-adminpass="admin"
-adminemail="clement.biron@gmail.com"
-
-# DB
-dbname=localhost
-dbuser=root
-dbpass=""
-dbprefix="irwopzd_$foldername"
 
 
 #  ==============================
@@ -163,11 +127,11 @@ apache_modules:
 
 # Download WP
 bot "-> Je télécharge la dernière version de WordPress $wplang..."
-wp core download --locale=$wplang --force
+php C:/wp-cli/wp-cli.phar core download --locale=$wplang --force
 
 # Create base configuration
 bot "-> Je lance la configuration de WP"
-wp core config --dbname=$dbname --dbuser=$dbuser --dbpass=$dbpass --dbprefix=$dbprefix --extra-php <<PHP
+php C:/wp-cli/wp-cli.phar core config --dbname=$dbname --dbuser=$dbuser --dbpass=$dbpass --dbprefix=$dbprefix --extra-php <<PHP
 // Désactiver l'éditeur de thème et de plugins en administration
 define('DISALLOW_FILE_EDIT', true);
 
@@ -183,11 +147,11 @@ PHP
 
 # Create database
 bot "-> Je crée la base de données"
-wp db create
+php C:/wp-cli/wp-cli.phar db create
 
 # Launch install
 bot "-> J'installe WordPress..."
-wp core install --url=$url --title="$title" --admin_user=$adminlogin --admin_email=$adminemail --admin_password=$adminpass
+php C:/wp-cli/wp-cli.phar core install --url=$url --title="$title" --admin_user=$adminlogin --admin_email=$adminemail --admin_password=$adminpass
 
 # Si on a bien un fichier qui listes les plugins à installer
 if [ -n "$pluginfilepath" ]
@@ -197,7 +161,7 @@ if [ -n "$pluginfilepath" ]
         while read line || [ -n "$line" ]
         do
             bot "-> Plugin $line"
-            wp plugin install $line --activate
+            php C:/wp-cli/wp-cli.phar plugin install $line --activate
         done < $pluginfilepath
 fi
 
@@ -208,7 +172,7 @@ if [ -n "$acfkey" ]
 		cd $pathtoinstall
 		cd wp-content/plugins/
 		curl -L -v 'http://connect.advancedcustomfields.com/index.php?p=pro&a=download&k='$acfkey > advanced-custom-fields-pro.zip
-		wp plugin install advanced-custom-fields-pro.zip --activate
+		php C:/wp-cli/wp-cli.phar plugin install advanced-custom-fields-pro.zip --activate
 fi
 
 # Download from private git repository
@@ -246,34 +210,34 @@ echo "/*
 
 # Activate theme
 bot "-> J'active le thème $foldername:"
-wp theme activate $foldername
+php C:/wp-cli/wp-cli.phar theme activate $foldername
 
 # Misc cleanup
 bot "-> Je supprime les posts, comments et terms"
-wp site empty --yes
+php C:/wp-cli/wp-cli.phar site empty --yes
 
 bot "-> Je supprime Hello dolly et les themes de bases"
-wp plugin delete hello
-wp theme delete twentyfifteen
-wp theme delete twentyseventeen
-wp theme delete twentysixteen
-wp option update blogdescription ''
+php C:/wp-cli/wp-cli.phar plugin delete hello
+php C:/wp-cli/wp-cli.phar theme delete twentyfifteen
+php C:/wp-cli/wp-cli.phar theme delete twentyseventeen
+php C:/wp-cli/wp-cli.phar theme delete twentysixteen
+php C:/wp-cli/wp-cli.phar option update blogdescription ''
 
 # Create standard pages
 bot "-> Je crée les pages standards accueil et mentions légales"
-wp post create --post_type=page --post_title='Accueil' --post_status=publish
-wp post create --post_type=page --post_title='Mentions Légales' --post_status=publish
+php C:/wp-cli/wp-cli.phar post create --post_type=page --post_title='Accueil' --post_status=publish
+php C:/wp-cli/wp-cli.phar post create --post_type=page --post_title='Mentions Légales' --post_status=publish
 
 # La page d'accueil est une page
 # Et c'est la page qui se nomme accueil
 bot "-> Configuration de la page accueil"
-wp option update show_on_front 'page'
-wp option update page_on_front $(wp post list --post_type=page --post_status=publish --posts_per_page=1 --pagename=Accueil --field=ID --format=ids)
+php C:/wp-cli/wp-cli.phar option update show_on_front 'page'
+php C:/wp-cli/wp-cli.phar option update page_on_front $(php C:/wp-cli/wp-cli.phar post list --post_type=page --post_status=publish --posts_per_page=1 --pagename=Accueil --field=ID --format=ids)
 
 # Permalinks to /%postname%/
 bot "-> J'active la structure des permaliens /%postname%/ et génère le fichier .htaccess"
-wp rewrite structure "/%postname%/" --hard
-wp rewrite flush --hard
+php C:/wp-cli/wp-cli.phar rewrite structure "/%postname%/" --hard
+php C:/wp-cli/wp-cli.phar rewrite flush --hard
 
 #Modifier le fichier htaccess
 bot "-> J'ajoute des règles Apache dans le fichier htaccess"
@@ -297,7 +261,7 @@ Options All -Indexes
 
 # Créer la page du styleguide
 bot "-> Je crée la page pour le styleguide et l'associe au template qui va bien."
-wp post create --post_type=page --post_title='Styleguide' --post_status=publish --page_template='page-styleguide.php'
+php C:/wp-cli/wp-cli.phar post create --post_type=page --post_title='Styleguide' --post_status=publish --page_template='page-styleguide.php'
 
 
 # Si on veut versionner le projet sur Bibucket
@@ -323,11 +287,6 @@ case "$yn" in
 	    # Init git et lien avec le dépôt
 	    git init 
 	    git remote add origin git@bitbucket.org:$login/$depot.git 
-	    
-	    # Ajouter les fichiers untracked, commit et push toussa
-	    git add -A 
-	    git commit -m 'first commit'
-	    git push -u origin master
 
 	    success "-> OK ! adresse du dépôt est : https://bitbucket.org/$login/$depot";;
     n ) 
@@ -346,11 +305,11 @@ echo -e "Admin email	: $adminemail"
 echo -e "DB name 		: $dbname"
 echo -e "DB user 		: $dbuser"
 echo -e "DB pass 		: $dbpass"
-echo -e "DB prefix 		: irwopzd_$foldername"
+echo -e "DB prefix 		: $prefix_$foldername"
 echo -e "WP_DEBUG 		: TRUE"
 echo "--------------------------------------"
 
-
+cd $pathtoinstall
 
 # Menu stuff
 # echo -e "Je crée le menu principal, assigne les pages, et je lie l'emplacement du thème : "
@@ -367,3 +326,4 @@ echo "--------------------------------------"
 # git init    # git project
 # git add -A  # Add all untracked files
 # git commit -m "Initial commit"   # Commit changes
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       

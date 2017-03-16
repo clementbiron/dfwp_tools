@@ -4,3 +4,4 @@ custom-post-type-ui
 codepress-admin-columns
 sf-adminbar-tools
 query-monitor
+wordpress-plugin-user-switching
