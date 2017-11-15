@@ -31,7 +31,7 @@ bash install.sh
 ---
 
 ### export.sh
-Warning: it's a draft copy, please don't use before checking the code and adpat it 
+Warning: it's a draft copy, please don't use before checking the code
 
 ## Use :
 bash export.sh
@@ -39,7 +39,7 @@ bash export.sh
 ---
 
 ### import.sh
-Warning: it's a draft copy, please don't use before checking the code and adpat it 
+Warning: it's a draft copy, please don't use before checking the code
 
 ## Use :
 bash import.sh
