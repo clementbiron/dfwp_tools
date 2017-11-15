@@ -6,8 +6,7 @@ Testé dans un environnement Windows, à adapter à vos besoins.
 
 ### install.sh
 WordPress auto install with WP-Cli
-
-Warning: this script is no longer valid, please adapted it to your needs
+Warning: it's a draft copy, please don't use before checking the code
 
 ## Features
 - Install WordPress (fr only for now)
@@ -32,9 +31,7 @@ bash install.sh
 ---
 
 ### export.sh
-
 Warning: it's a draft copy, please don't use before checking the code and adpat it 
-
 
 ## Use :
 bash export.sh
@@ -42,7 +39,6 @@ bash export.sh
 ---
 
 ### import.sh
-
 Warning: it's a draft copy, please don't use before checking the code and adpat it 
 
 ## Use :
