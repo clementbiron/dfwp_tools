@@ -1,14 +1,16 @@
 # dfwp_tools
 Suite de script pour WordPress
-Testé dans un environnement Windows, à adapter à vos besoins.
+
+*Testé dans un environnement Windows, à adapter à vos besoins.*
 
 ---
 
 ### install.sh
 WordPress auto install with WP-Cli
-Warning: it's a draft copy, please don't use before checking the code
 
-## Features
+*Warning: it's a draft copy, please don't use before checking the code*
+
+#### Features
 - Install WordPress (fr only for now)
 - Clear default WordPress content and plugin
 - Create standards pages 'Accueil' and 'Mentions légales'
@@ -22,24 +24,24 @@ Warning: it's a draft copy, please don't use before checking the code
 - Install and active ACF Pro with your keygen
 - Allow to push projet on BitBucket
 
-## Config :
+#### Config :
 Fill config.sh file
 
-## Use :
-bash install.sh
+#### Use :
+bash `install.sh`
 
 ---
 
 ### export.sh
-Warning: it's a draft copy, please don't use before checking the code
+*Warning: it's a draft copy, please don't use before checking the code*
 
-## Use :
-bash export.sh
+#### Use :
+bash `export.sh`
 
 ---
 
 ### import.sh
-Warning: it's a draft copy, please don't use before checking the code
+*Warning: it's a draft copy, please don't use before checking the code*
 
-## Use :
-bash import.sh
+#### Use :
+bash `import.sh`
